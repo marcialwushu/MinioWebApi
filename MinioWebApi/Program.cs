@@ -28,6 +28,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHttpClient();
+
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
@@ -41,6 +43,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthorization();
 
+app.MapPrometheusScrapingEndpoint("/metrics");
 app.MapControllers();
 
 app.Run();

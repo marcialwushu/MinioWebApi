@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MinioWebApi.ServiceDefaults\MinioWebApi.ServiceDefaults.csproj" />
     <ProjectReference Include="..\MinioWebApi\MinioWebApi.csproj" />
   </ItemGroup>
 

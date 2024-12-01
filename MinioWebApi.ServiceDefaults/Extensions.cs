@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using MinioWebApi.ServiceDefaults;
 using OpenTelemetry;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
@@ -29,6 +31,8 @@ public static class Extensions
         builder.ConfigureOpenTelemetry();
 
         builder.AddDefaultHealthChecks();
+
+        builder.AddStructuredLogging();
 
         builder.Services.AddServiceDiscovery();
 
@@ -69,7 +73,10 @@ public static class Extensions
                 tracing.AddAspNetCoreInstrumentation()
                     // Adiciona instrumentação para gRPC (descomente se necessário)
                     //.AddGrpcClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
                     .AddHttpClientInstrumentation();
+                    
             });
 
         builder.AddOpenTelemetryExporters();
@@ -97,18 +104,37 @@ public static class Extensions
                 .WithMetrics(metrics =>
                 {
                     metrics.AddConsoleExporter();
+                    metrics.AddPrometheusExporter();
                 });
 
-            // Construindo o provedor de serviços para acessar o ILoggerFactory
-            using var serviceProvider = builder.Services.BuildServiceProvider();
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-            loggerFactory.CreateLogger("OpenTelemetry")
-                .LogInformation("Console exporter enabled for development/debug environment.");
         }
+
+        // Construindo o provedor de serviços para acessar o ILoggerFactory
+        using var serviceProvider = builder.Services.BuildServiceProvider();
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        loggerFactory.CreateLogger("OpenTelemetry")
+            .LogInformation("Console exporter enabled for development/debug environment.");
+
+        builder.Logging.AddConsole();
 
         if (useOtlpExporter)
         {
             builder.Services.AddOpenTelemetry().UseOtlpExporter();
+
+            builder.Services.AddOpenTelemetry()
+                .WithTracing(tracing =>
+                {
+                    tracing.AddOtlpExporter();
+                })
+                .WithMetrics(metrics =>
+                {
+                    metrics.AddOtlpExporter();
+                    metrics.AddPrometheusExporter();
+                });
+            builder.Logging.AddOpenTelemetry(options =>
+            {
+                options.AddOtlpExporter();
+            });
         }
 
         // Configuração opcional para Azure Monitor
