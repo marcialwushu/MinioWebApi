@@ -98,5 +98,67 @@ namespace MinioWebApi.Controllers
             }
             
         }
+
+        /// <summary>
+        /// Cria um bucket no Minio.
+        /// </summary>
+        /// <param name="bucketName">Nome do bucket a ser criado.</param>
+        /// <returns>Resultado da criação do bucket.</returns>
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateBucket([FromQuery] string bucketName)
+        {
+            if (string.IsNullOrEmpty(bucketName))
+            {
+                return BadRequest(new { Message = "Bucket name cannot be null or empty." });
+            }
+
+            try
+            {
+                var cts = new CancellationTokenSource();
+                var cancellationToken = cts.Token;
+
+                var result = await _fileService.CreateBucket(bucketName, cancellationToken);
+
+                if (result)
+                {
+                    return Ok(new { Message = $"Bucket '{bucketName}' was created successfully or already exists." });
+                }
+                else
+                {
+                    return StatusCode(500, new { Message = $"Failed to create bucket '{bucketName}'." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while creating the bucket.", Error = ex.Message });
+            }
+        }
+
+        [HttpGet("test-connection")]
+        public async Task<IActionResult> TestConnection()
+        {
+            try
+            {
+                var cts = new CancellationTokenSource();
+                var cancellationToken = cts.Token;
+
+                var result = await _fileService.TestConnectionAsync(cancellationToken);
+
+                if (result)
+                {
+                    return Ok(new { Message = "Connection to MinIO was successful." });
+                }
+                else
+                {
+                    return StatusCode(500, new { Message = "Failed to connect to MinIO." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while testing the connection.", Error = ex.Message });
+            }
+        }
+
+
     }
 }

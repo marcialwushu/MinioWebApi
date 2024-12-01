@@ -1,6 +1,7 @@
 ﻿
 using Minio;
 using Minio.DataModel.Args;
+using Minio.Exceptions;
 
 namespace MinioWebApi.Services
 {
@@ -20,6 +21,40 @@ namespace MinioWebApi.Services
             _minioClient = minioClient;
         }
 
+        public async Task<bool> CreateBucket(string bucketName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Cria o argumento para verificar se o bucket existe
+                var bucketExistsArgs = new BucketExistsArgs()
+                    .WithBucket(bucketName);
+
+                // Create bucket if it doesn't exist.
+                bool found = await _minioClient.BucketExistsAsync(bucketExistsArgs, cancellationToken);
+                if (found)
+                {
+                    Console.WriteLine($"{bucketName} already exists");
+                    return true;
+                }
+                else
+                {
+                    // Cria o argumento para criar o bucket
+                    var makeBucketArgs = new MakeBucketArgs()
+                        .WithBucket(bucketName);
+
+                    // Cria o bucket
+                    await _minioClient.MakeBucketAsync(makeBucketArgs, cancellationToken);
+                    Console.WriteLine($"{bucketName} is created successfully");
+                    return true;
+                }
+            }
+            catch (MinioException e)
+            {
+                Console.WriteLine("Error occurred: " + e.Message);
+                return false;
+            }
+        }
+
         /// <inheritdoc/>
         public async Task<string> GeneratePresignedUrlAsync(string bucketName, string objectName)
         {
@@ -30,6 +65,21 @@ namespace MinioWebApi.Services
                 .ConfigureAwait(false);
 
             return presignedUrl;
+        }
+
+        public async Task<bool> TestConnectionAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _minioClient.ListBucketsAsync(cancellationToken);
+                Console.WriteLine("MinIO connection successful.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to connect to MinIO: {ex.Message}");
+                return false;
+            }
         }
 
         /// <inheritdoc/>

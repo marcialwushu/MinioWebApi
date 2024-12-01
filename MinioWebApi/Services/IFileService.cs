@@ -22,5 +22,9 @@
         /// <param name="contentType">Tipo de conteúdo (MIME type).</param>
         /// <returns>Retorna um valor booleano indicando sucesso ou falha.</returns>
         Task<bool> UploadFileAsync(string bucketName, string objectName, Stream fileStream, string contentType);
+
+        Task<bool> CreateBucket(string bucketName, CancellationToken cancellationToken);
+
+        Task<bool> TestConnectionAsync(CancellationToken cancellationToken);
     }
 }
